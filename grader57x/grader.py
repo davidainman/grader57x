@@ -1,4 +1,4 @@
-import os,sys,tarfile,zipfile,struct,stat,difflib
+import os,sys,tarfile,zipfile,struct,stat,difflib,shutil
 from GradeReport import GradeReport as GR
 
 def main():
@@ -8,6 +8,8 @@ def main():
   config = read_config_file(sys.argv[1])
   if sys.argv[2] == 'open':
     open_submissions(config['zipfile'], config['destination'], config['file_structure'], config['total_grade'], config['report'])
+  elif sys.argv[2] == 'open_student':
+    open_student(sys.argv[3], sys.argv[4], config['destination'], config['file_structure'], config['total_grade'], config['report'])
   elif sys.argv[2] == 'eval_all':
     eval_all(config['destination'], config['repro_comparison'], config['gold_comparison'], config['report'])
   elif sys.argv[2] == 'eval_student':
@@ -37,15 +39,40 @@ def open_submissions(zipname, foldername, file_structure, total_grade, reportnam
     os.chdir('..')
   #write errors to file
   os.chdir('..')
-  outfile = open(reportname, 'w')
-  outfile.write(grade_report.pprint())
-  outfile.close()
+  write_evaluation(grade_report, foldername, reportname)
   #prepare for running
   sh_files = find_sh_files(expected_files)
   for student in students:
     for sh_file in sh_files:
       if os.path.isfile(student + '/' + sh_file):
         os.chmod(student + '/' + sh_file, stat.S_IXUSR)
+
+def open_student(student_name, student_tar, foldername, file_structure, total_grade, reportname):
+  #check input parameters
+  expected_files = read_expected_files(file_structure)
+  if not os.path.exists(foldername):
+    print('It looks like the folder ' + foldername + ' doesn\'t exist. Aborting.')
+    return
+  grade_report = GR.from_file(reportname)
+  #move tar file to student directory and untar
+  #if the student directory exists, delete it
+  if os.path.exists(foldername + '/' + student_name):
+    shutil.rmtree(foldername + '/' + student_name)
+  os.mkdir(foldername + '/' + student_name)
+  shutil.copyfile(student_tar, foldername + '/' + student_name + '/' + student_tar)
+  os.chdir(foldername + '/' + student_name)
+  #if student grade exists, remove it
+  grade_report.remove_student(student_name)
+  grade_report.add_student(student_name)
+  untar(student_name, grade_report)
+  #write to file
+  os.chdir('../..')
+  write_evaluation(grade_report, foldername, reportname)
+  #prepare for running
+  for sh_file in find_sh_files(expected_files):
+    if os.path.isfile(student_name + '/' + sh_file):
+      os.chmod(student + '/' + sh_file, stat.S_IXUSR)
+  print ('I cannot tell if the student submitted a readme separately. Please verify the student\'s readme score.')
 
 #ends up in the unzipped file
 def unzip(zipname, foldername, grade_total):
@@ -237,17 +264,18 @@ def compare_files(file1, file2):
 def write_evaluation(grade_report,foldername, reportname):
   outfile = open(reportname, 'w')
   outfile.write(grade_report.pprint())
+  outfile.close()
 
 #expected_files a list of tuples [(filename sorted|unsorted) ..]
 #test_files a list of tuples [(gold_file test_file sorted|unsorted) ..]
 def eval_all(foldername, expected_files, test_files, reportname):
-  grade_report = GR.from_file(foldername)
+  grade_report = GR.from_file(reportname)
   for student in grade_report.get_students():
     eval_student(grade_report, foldername, student, expected_files, test_files)
   write_evaluation(grade_report, foldername, reportname)
 
 def eval_single_student(foldername, student, expected_files, test_files, reportname):
-  grade_report = GR.from_file(foldername)
+  grade_report = GR.from_file(reportname)
   eval_student(grade_report, foldername, student, expected_files, test_files)
   write_evaluation(grade_report, foldername, reportname)
 

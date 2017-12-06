@@ -17,23 +17,26 @@ class GradeReport:
   def new(cls, students, total_grade):
     gr = cls()
     for student in students:
-      gr.grade_report[student] = dict()
-      gr.grade_report[student][cls.GRADE_STR] = total_grade
-      gr.grade_report[student][cls.TOTAL_STR] = total_grade
-      # initialize standard portions
-      gr.grade_report[student][cls.FILES_MODULE_STR] = dict()
-      gr.grade_report[student][cls.FILES_MODULE_STR][cls.GRADE_STR] = cls.FILES_MODULE_TOTAL
-      gr.grade_report[student][cls.FILES_MODULE_STR][cls.TOTAL_STR] = cls.FILES_MODULE_TOTAL
-      gr.grade_report[student][cls.FILES_MODULE_STR][cls.ERRORS_STR] = []
-      gr.grade_report[student][cls.RUN_MODULE_STR] = dict()
-      gr.grade_report[student][cls.RUN_MODULE_STR][cls.GRADE_STR] = cls.RUN_MODULE_TOTAL
-      gr.grade_report[student][cls.RUN_MODULE_STR][cls.TOTAL_STR] = cls.RUN_MODULE_TOTAL
-      gr.grade_report[student][cls.RUN_MODULE_STR][cls.ERRORS_STR] = []
+      gr.add_student(student, total_grade)
     return gr
   
+  def add_student(self, student, total_grade=25):
+    self.grade_report[student] = dict()
+    self.grade_report[student][self.GRADE_STR] = total_grade
+    self.grade_report[student][self.TOTAL_STR] = total_grade
+    # initialize standard portions
+    self.grade_report[student][self.FILES_MODULE_STR] = dict()
+    self.grade_report[student][self.FILES_MODULE_STR][self.GRADE_STR] = self.FILES_MODULE_TOTAL
+    self.grade_report[student][self.FILES_MODULE_STR][self.TOTAL_STR] = self.FILES_MODULE_TOTAL
+    self.grade_report[student][self.FILES_MODULE_STR][self.ERRORS_STR] = []
+    self.grade_report[student][self.RUN_MODULE_STR] = dict()
+    self.grade_report[student][self.RUN_MODULE_STR][self.GRADE_STR] = self.RUN_MODULE_TOTAL
+    self.grade_report[student][self.RUN_MODULE_STR][self.TOTAL_STR] = self.RUN_MODULE_TOTAL
+    self.grade_report[student][self.RUN_MODULE_STR][self.ERRORS_STR] = []
+  
   @classmethod
-  def from_file(cls, foldername):
-    grade_file = open(foldername + '_report.txt').readlines()
+  def from_file(cls, reportname):
+    grade_file = open(reportname).readlines()
     gr = cls()
     # studentname -> dict(self.GRADE_STR -> #, self.TOTAL_STR -> #, self.MODULE_STR1_NAME -> dict(self.GRADE_STR -> #, self.TOTAL_STR -> #, self.ERRORS_STR -> [error list]), 
     # self.MODULE_STR2_NAME -> dict(self.GRADE_STR -> #, self.TOTAL_STR -> #, self.ERRORS_STR -> [error list])
@@ -86,6 +89,10 @@ class GradeReport:
         #adjust grade
         self.grade_report[student][self.GRADE_STR] -= self.grade_report[student][modulename][self.GRADE_STR]
         self.grade_report[student].pop(modulename)
+
+  def remove_student(self, studentname):
+    if studentname in self.grade_report.keys():
+      self.grade_report.pop(studentname)
 
   def add_module(self, student, modulename, grade_total):
     self.grade_report[student][modulename] = dict()
