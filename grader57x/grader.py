@@ -285,8 +285,6 @@ def read_config_file(filename):
         print("The following line is formatted incorrectly:\n" + line)
         return False
       config['destination'] = value[0]
-      if 'report' not in config:
-        config['report'] = value[0] + '_report.txt' #default is foldername_report.txt
     elif attribute == 'report':
       if not len(value) == 1:
         print("The following line is formatted incorrectly:\n" + line)
@@ -324,6 +322,11 @@ def read_config_file(filename):
       config['file_structure'] = value[0]
     else:
       print("I don't understand the following line in from " + filename + ".\n" + line + "Skipping.")
+  #set defaults
+  if 'report' not in config:
+    config['report'] = config['destination'] + '_report.txt' #default is foldername_report.txt
+  if 'total_grade' not in config:
+    config['total_grade'] = 25
   return config
 
 def check_expected_files_ran(grade_report, folder_name, student, expected_files):
