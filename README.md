@@ -1,6 +1,6 @@
 # README #
 
-TODO: Fill in later
+See guidelines/guidelines.pdf
 
 ### What is this repository for? ###
 
