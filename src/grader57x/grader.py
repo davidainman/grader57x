@@ -7,13 +7,13 @@ def main():
     return
   config = read_config_file(sys.argv[1])
   if sys.argv[2] == 'open':
-    open_submissions(config['zipfile'], config['destination'], config['file_structure'], config['total_grade'], config['report'])
+    open_submissions(config['zipfile'], config['destination'], config['file_structure'], config['total_grade'], config['gold_grade'], config['report'])
   elif sys.argv[2] == 'open_student':
-    open_student(sys.argv[3], sys.argv[4], config['destination'], config['file_structure'], config['total_grade'], config['report'])
+    open_student(sys.argv[3], sys.argv[4], config['destination'], config['file_structure'], config['total_grade'], config['gold_grade'], config['report'])
   elif sys.argv[2] == 'eval_all':
-    eval_all(config['destination'], config['repro_comparison'], config['gold_comparison'], config['report'])
+    eval_all(config['destination'], config['repro_comparison'], config['gold_comparison'], config['report'], config['gold_grade'])
   elif sys.argv[2] == 'eval_student':
-    eval_single_student(config['destination'], sys.argv[3], config['repro_comparison'], config['gold_comparison'], config['report'])
+    eval_single_student(config['destination'], sys.argv[3], config['repro_comparison'], config['gold_comparison'], config['report'], config['gold_grade'])
   else: #invalid
     invalid_arguments()
 
@@ -23,13 +23,13 @@ def invalid_arguments():
   print('\teval_all')
   print('\teval_student <studentname>')
 
-def open_submissions(zipname, foldername, file_structure, total_grade, reportname):
+def open_submissions(zipname, foldername, file_structure, total_grade, gold_grade, reportname):
   #check input paramaters
   expected_files = read_expected_files(file_structure)
   if os.path.exists(foldername):
     print('It looks like the folder ' + foldername + ' already exists. Aborting.')
     return
-  grade_report = unzip(zipname, foldername, total_grade)
+  grade_report = unzip(zipname, foldername, total_grade, gold_grade)
   #check folder structure
   students = get_students('.')
   for student in students:
@@ -47,7 +47,7 @@ def open_submissions(zipname, foldername, file_structure, total_grade, reportnam
       if os.path.isfile(student + '/' + sh_file):
         os.chmod(student + '/' + sh_file, stat.S_IXUSR)
 
-def open_student(student_name, student_tar, foldername, file_structure, total_grade, reportname):
+def open_student(student_name, student_tar, foldername, file_structure, total_grade, gold_grade, reportname):
   #check input parameters
   expected_files = read_expected_files(file_structure)
   if not os.path.exists(foldername):
@@ -63,7 +63,7 @@ def open_student(student_name, student_tar, foldername, file_structure, total_gr
   os.chdir(foldername + '/' + student_name)
   #if student grade exists, remove it
   grade_report.remove_student(student_name)
-  grade_report.add_student(student_name)
+  grade_report.add_student(student_name, total_grade, gold_grade)
   untar(student_name, grade_report)
   #write to file
   os.chdir('../..')
@@ -75,7 +75,7 @@ def open_student(student_name, student_tar, foldername, file_structure, total_gr
   print ('I cannot tell if the student submitted a readme separately. Please verify the student\'s readme score.')
 
 #ends up in the unzipped file
-def unzip(zipname, foldername, grade_total):
+def unzip(zipname, foldername, grade_total, gold_grade):
   #unzip canvas file
   zipped = zipfile.ZipFile(zipname, 'r')
   zipped.extractall(foldername)
@@ -91,7 +91,7 @@ def unzip(zipname, foldername, grade_total):
   for file in allfiles:
     os.rename(file, get_student_name(file) + '/' + get_turnin_name(file))
   #initialize student grades
-  grade_report = GR.new(students, grade_total)
+  grade_report = GR.new(students, grade_total, gold_grade)
   #for student in students:
   #  TAR_README_GRADE_STRS[student] = 4
   #  FILE_STRUCT_GRADE_STRS[student] = 6
@@ -240,25 +240,16 @@ def find_sh_files(expected_file_structure):
       sh_files += find_sh_files(expected_file_structure[file_or_dir])
   return sh_files
 
-def read_config_file(filename):
-  config = open(filename).readlines()
-  if (len(config) != 2):
-    return None, None
-  expected_files = config[0].split()
-  tested_files = config[1].split()
-  if len(expected_files) % 2 != 0 or len(tested_files) % 3 != 0:
-    return None, None
-  return expected_files, tested_files
-
 def compare_files(file1, file2):
   diff_lines = []
   diff = difflib.unified_diff(file1, file2, fromfile='file1',tofile='file2',n=0)
   for line in diff:
+    to_add = True
     for prefix in ('---','+++','@@'):
       if line.startswith(prefix):
-        break
-      else:
-        diff_lines.append(line)
+        to_add = False
+    if to_add:
+      diff_lines.append(line)
   return diff_lines
 
 def write_evaluation(grade_report,foldername, reportname):
@@ -268,19 +259,19 @@ def write_evaluation(grade_report,foldername, reportname):
 
 #expected_files a list of tuples [(filename sorted|unsorted) ..]
 #test_files a list of tuples [(gold_file test_file sorted|unsorted) ..]
-def eval_all(foldername, expected_files, test_files, reportname):
+def eval_all(foldername, expected_files, test_files, reportname, gold_grade):
   grade_report = GR.from_file(reportname)
   for student in grade_report.get_students():
-    eval_student(grade_report, foldername, student, expected_files, test_files)
+    eval_student(grade_report, foldername, student, expected_files, test_files, gold_grade)
   write_evaluation(grade_report, foldername, reportname)
 
-def eval_single_student(foldername, student, expected_files, test_files, reportname):
+def eval_single_student(foldername, student, expected_files, test_files, reportname, gold_grade):
   grade_report = GR.from_file(reportname)
-  eval_student(grade_report, foldername, student, expected_files, test_files)
+  eval_student(grade_report, foldername, student, expected_files, test_files, gold_grade)
   write_evaluation(grade_report, foldername, reportname)
 
-def eval_student(grade_report, foldername, student, expected_files, test_files):
-  grade_report.clear_student_modules_except_files(student)
+def eval_student(grade_report, foldername, student, expected_files, test_files, gold_grade):
+  grade_report.clear_student_modules_except_files(student, gold_grade)
   check_expected_files_ran(grade_report, foldername, student, expected_files)
   check_test_files(grade_report, foldername, student, test_files)
 
@@ -294,6 +285,7 @@ def read_config_file(filename):
   config['cmd'] = 'hw.cmd'
   config['gold_comparison'] = []
   config['repro_comparison'] = []
+  gold_comparison_points = 0
   for line in config_file:
     if line == '':
       continue
@@ -329,20 +321,22 @@ def read_config_file(filename):
         return False
       config['run_script'] = value[0]
     elif attribute == 'gold_comparison':
-      if not len(value) == 3:
+      if not len(value) == 4:
         print("The following line is formatted incorrectly:\n" + line)
         return False
-      config['gold_comparison'].append((value[0], value[1], value[2]))
+      config['gold_comparison'].append((value[0], value[1], value[2], int(value[3])))
+      gold_comparison_points += int(value[3])
     elif attribute == 'repro_comparison':
       if not len(value) == 2:
         print("The following line is formatted incorrectly:\n" + line)
         return False
       config['repro_comparison'].append((value[0], value[1]))
-    elif attribute == 'total_grade':
-      if not len(value) == 1:
-        print("The following line is formatted incorrectly:\n" + line)
-        return False
-      config['total_grade'] = int(value[0])
+#    Removing this: It is calculated as 25 + gold_comparison scores.
+#    elif attribute == 'total_grade':
+#      if not len(value) == 1:
+#        print("The following line is formatted incorrectly:\n" + line)
+#        return False
+#      config['total_grade'] = int(value[0])
     elif attribute == 'file_structure':
       if not len(value) == 1:
         print("The following line is formatted incorrectly:\n" + line)
@@ -353,8 +347,8 @@ def read_config_file(filename):
   #set defaults
   if 'report' not in config:
     config['report'] = config['destination'] + '_report.txt' #default is foldername_report.txt
-  if 'total_grade' not in config:
-    config['total_grade'] = 25
+  config['total_grade'] = 25 + gold_comparison_points
+  config['gold_grade'] = gold_comparison_points
   return config
 
 def check_expected_files_ran(grade_report, folder_name, student, expected_files):
@@ -390,7 +384,7 @@ def check_test_files(grade_report, folder_name, student, tested_files):
       print "ERROR, gold file " + file_tuple[0] + " does not exist!"
       break
     if not os.path.isfile(test_file_path):
-      grade_report.add_error(student, 'Manual Grading', 0, 'Did not find output ' + file_tuple[1])
+      grade_report.add_error(student, 'Gold Standard Grading', file_tuple[3], 'Did not find output ' + file_tuple[1])
       continue
     # we can assume both files exist now
     gold_file = open(file_tuple[0]).readlines()
@@ -400,9 +394,9 @@ def check_test_files(grade_report, folder_name, student, tested_files):
       sorted(test_file)
     diff_lines = compare_files(gold_file, test_file)
     if len(diff_lines) == 0:
-      grade_report.add_error(student, 'Manual Grading', 0, file_tuple[1] + ' looks good')
+      grade_report.add_error(student, 'Gold Standard Grading', 0, file_tuple[1] + ' looks good')
     else:
-      grade_report.add_error(student, 'Manual Grading', 0, str(len(diff_lines)) + ' lines different for ' + file_tuple[1] + ': see ' + test_file_path + '.diff')
+      grade_report.add_error(student, 'Gold Standard Grading', file_tuple[3], str(len(diff_lines)) + ' lines different from the gold file for ' + file_tuple[1] + ': see ' + test_file_path + '.diff')
       diff_file = open(test_file_path + '.diff', 'w')
       diff_file.writelines(diff_lines)
       diff_file.close()
@@ -411,12 +405,12 @@ def compare_files(file1, file2):
   diff_lines = []
   diff = difflib.unified_diff(file1, file2, fromfile='file1',tofile='file2',n=0)
   for line in diff:
+    do_add = True
     for prefix in ('---','+++','@@'):
       if line.startswith(prefix):
-        break
-      else:
-        diff_lines.append(line)
-        break
+        do_add = False
+    if do_add:
+      diff_lines.append(line)
   return diff_lines
 
 if __name__ == "__main__":

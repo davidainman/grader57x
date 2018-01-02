@@ -9,18 +9,19 @@ class GradeReport:
   FILES_MODULE_TOTAL = 10
   RUN_MODULE_STR = 'Standard: Program runs'
   RUN_MODULE_TOTAL = 15
+  GOLD_MODULE_STR = 'Gold Standard Grading' 
   
   def __init__(self):
     self.grade_report = dict()
   
   @classmethod
-  def new(cls, students, total_grade):
+  def new(cls, students, total_grade, gold_grade):
     gr = cls()
     for student in students:
-      gr.add_student(student, total_grade)
+      gr.add_student(student, total_grade, gold_grade)
     return gr
   
-  def add_student(self, student, total_grade=25):
+  def add_student(self, student, total_grade, gold_grade):
     self.grade_report[student] = dict()
     self.grade_report[student][self.GRADE_STR] = total_grade
     self.grade_report[student][self.TOTAL_STR] = total_grade
@@ -33,6 +34,10 @@ class GradeReport:
     self.grade_report[student][self.RUN_MODULE_STR][self.GRADE_STR] = self.RUN_MODULE_TOTAL
     self.grade_report[student][self.RUN_MODULE_STR][self.TOTAL_STR] = self.RUN_MODULE_TOTAL
     self.grade_report[student][self.RUN_MODULE_STR][self.ERRORS_STR] = []
+    self.grade_report[student][self.GOLD_MODULE_STR] = dict()
+    self.grade_report[student][self.GOLD_MODULE_STR][self.GRADE_STR] = gold_grade
+    self.grade_report[student][self.GOLD_MODULE_STR][self.TOTAL_STR] = gold_grade
+    self.grade_report[student][self.GOLD_MODULE_STR][self.ERRORS_STR] = []
   
   @classmethod
   def from_file(cls, reportname):
@@ -100,7 +105,7 @@ class GradeReport:
     self.grade_report[student][modulename][self.TOTAL_STR] = grade_total
     self.grade_report[student][modulename][self.ERRORS_STR] = []
 
-  def clear_student_modules_except_files(self, student):
+  def clear_student_modules_except_files(self, student, gold_grade):
     for module in self.get_modules(student):
       if module != self.FILES_MODULE_STR:
         # add back deducted points
@@ -111,6 +116,11 @@ class GradeReport:
     self.grade_report[student][self.RUN_MODULE_STR][self.GRADE_STR] = self.RUN_MODULE_TOTAL
     self.grade_report[student][self.RUN_MODULE_STR][self.TOTAL_STR] = self.RUN_MODULE_TOTAL
     self.grade_report[student][self.RUN_MODULE_STR][self.ERRORS_STR] = []
+    #add back gold module with expected value
+    self.grade_report[student][self.GOLD_MODULE_STR] = dict()
+    self.grade_report[student][self.GOLD_MODULE_STR][self.GRADE_STR] = gold_grade
+    self.grade_report[student][self.GOLD_MODULE_STR][self.TOTAL_STR] = gold_grade
+    self.grade_report[student][self.GOLD_MODULE_STR][self.ERRORS_STR] = []
 
   def get_students(self):
     retval = self.grade_report.keys()
