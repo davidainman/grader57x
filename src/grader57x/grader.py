@@ -129,7 +129,9 @@ def untar(student, grade_report):
       tar = tarfile.open(tarname)
       tar.extractall('.')
     except (tarfile.TarError, struct.error) as e:
-      grade_report.add_error(student, GR.FILES_MODULE_STR, 2, 'Tar file was corrupted: ' + tarname)
+      grade_report.add_error(student, GR.FILES_MODULE_STR, 2, 'Tar file was corrupted. Please try a manual open: ' + tarname)
+    except (OSError) as e:
+      grade_report.add_error(student, GR.FILES_MODULE_STR, 2, 'Tar file was corrupted or unopenable. Please try manually opening: ' + tarname)
   elif tarname[-3:] == '.gz' or tarname[-4:] == '.tar': #this is a tar or gz file
     grade_report.add_error(student, GR.FILES_MODULE_STR, 1, 'Misnamed tar file: ' + tarname)
     try:
