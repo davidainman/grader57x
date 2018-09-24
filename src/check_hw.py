@@ -1,4 +1,4 @@
-import os,sys,tarfile,shutil
+import os,sys,tarfile,shutil,subprocess
 TMP = "__tmp__"
 
 def check_program():
@@ -31,6 +31,7 @@ def check_program():
   expected_structure = read_expected_files(filelist)
   check_for_expected_files(expected_structure, TMP)
   check_for_shebang(allfiles)
+  check_for_carriage_returns(expected_structure)
   # compiled code exists and has associated source code
   code_dependencies = get_code_dependencies(sys.argv[1])
   if not contains_code(allfiles, code_dependencies.keys()):
@@ -149,6 +150,14 @@ def check_code_dependencies(allfiles, code_dependencies):
       elif not found_some_code and partial_source_code != []: #found only some source code
         print_purple("WARNING: Did not find all expected source code for file '" + ', '.join(binaries) +"'")
         print_purple("         Expected files of types " + ', '.join(partial_source_code_src_listm) +", but only found " + ', '.join(partial_source_code))
+
+def check_for_carriage_returns(allfiles):
+  # really, this only matters for output files -- only go through the output files and check
+  for file in allfiles:
+    if os.path.isfile(file):
+      if 'CRLF' in subprocess.check_output('file ' + file, shell=True):
+        print_red('Windows carriage returns found in ' + file)
+  return
 
 def print_red(s):
   print ("\033[91m{}\033[00m" .format(s))

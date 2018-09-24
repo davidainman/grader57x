@@ -1,0 +1,131 @@
+\documentclass[12pt]{article}
+\renewcommand{\labelenumi}{\arabic{enumi}.} 
+\renewcommand{\labelenumii}{\arabic{enumi}.\arabic{enumii}}
+\renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}}
+\usepackage{enumitem, comment, url}
+\setlist{  
+  listparindent=\parindent,
+  parsep=0pt,
+}
+\begin{document}
+
+\title{Guide for Instructors Creating 57x Homeworks}
+\author{David Inman}
+\date{\today}
+\maketitle
+
+\tableofcontents{}
+
+\begin{comment}
+
+\section{Introduction}
+
+\end{comment}
+
+\vspace{20pt}
+
+This document is meant to be a guide for instructors who are crafting or modifying homeworks for LING 570, 571, and 572. The goal of this document is to help these homeworks to be clear to students, easily gradable by TAs, and to automatable. The content of the assignment itself is up to the instructor. This document will focus on writing assignment descriptions (\S\ref{sec:homework}), output formatting (\S), and the creation of instructor-directed support files (\S).
+
+\section{Homework Descriptions} \label{sec:homework}
+
+This is a set of best practices for making homeworks easy for students to understand and to standardize grading practices across the CLMS series.
+
+\begin{enumerate}
+
+\item {Homeworks descriptions should include an at-a-glance summary of turn-in files at the end of the document. }
+
+\item {Homeworks should include an in-line point distribution, with points assigned at section headers or when deliverables are listed.
+
+The points specific to the assignment itself should add up to 75 (\S\ref{sec:specificrubric}). Either at the end or beginning of the homework description, the standard portion of the grade (25 points) should be referenced (\S\ref{sec:standardrubric}). Rather than reprinting the entire standard portion of the grade. For the standard portion, students can simply be pointed to the definition at \url{http://depts.washington.edu/uwcl/clms/course-policy.pdf}, or the point breakdown can be repeated, if desired.} %If these points are sub-divided within each section (e.g., you want to specify the number of points given for the code finishing in a period of time, or falling within an acceptable parameter), those points should be given at the top of a sub-section. }
+
+\item {Algorithms and outputs should be described separately. 
+
+It is sometimes difficult to fully clarify an assignment. When writing an assignment description, the best practice for clarity is to separate different parts of the assignment by section. If possible, describe the expected function of the program (Viterbi, classification, etc) in one section, and then describe the format of the output in the following section or a separate sub-section. Try to minimize component interleaving in the description, although full separation may be impossible.}
+
+\item {Points should be awarded for program \textit{output}, not for code structure.
+
+This prevents the TA from needing to review the code for each student. For instance, ``Program outputs a valid path (10 points)" is preferable to ``Initializes lattice (10 points)."}
+ 
+\item {Graded outputs should be strictly formatted.
+  
+  If a portion of a student's output is to be graded, that output must be uniform across all students. This means that the output must be very precisely formulated. For instance, ``Epsilon arcs are followed without printing an output value (10 points)" is preferable to ``Handles epsilon transitions (10 points)." Likewise, ``Re-print the input string with the labeled parts of speech after each word, followed by a tab character: e.g., word1 {\textbackslash}t POS1 {\textbackslash}t word2 {\textbackslash}t POS2 (...)" is better than ``Print the input string with the parts of speech after each word."
+  
+  The more detailed the output description, the better. }
+  
+\item {Graded outputs should be strictly ordered.
+
+Because the grading script works by diffing outputs against gold formats, the order in which material is printed is important. If students are printing a dictionary (and only a dictionary), the dictionary can be pre-sorted alphabetically before diffing. However a complex output cannot be sorted this way. Within a line, there must be a specific order in which contents are produced. For instance, if the output is
+
+
+\texttt{$<$Class 1$>$ probability $<$Class 2$>$ probability $<$Class 3$>$ probability}
+
+\noindent then the homework description must specify the order in which these items should be printed. E.g., by alphabetical order of class, or by descending probability. Any ambiguity in print orders will make assignments difficult to grade.
+ }
+\end{enumerate}
+
+\section{Rubric} \label{sec:rubric}
+
+The rubric across 570, 571, and 572 has been standardized. There are two parts: the standard component, which is graded identically across all assignments, and then the homework-specific portion, which is defined for each assignment. This section is presumed to be done by the TAs.
+
+\subsection{Standard Portion (25 points)} \label{sec:standardrubric}
+
+There is no deviation for this component, and it is graded automatically by the grader script. Points are assigned as follows:
+
+\begin{enumerate}
+\item Submitted Files (10 points)
+  \begin{enumerate}
+    \item Tarfile submitted (2 points)
+    \begin{enumerate}
+      \item Exists (1 point)
+      \item Correctly named (1 point)
+    \end{enumerate}
+    \item Readme file submitted (2 points)
+    \begin{enumerate}
+      \item Exists (1 point)
+      \item Correctly named (1 point)
+    \end{enumerate}
+    \item Requested files exist in tarfile (6 points)
+  \end{enumerate}
+  \item Program runs as expected (15 points)
+  \begin{enumerate}
+    \item Code runs to completion on input (10 points)
+    \item Output of running code matches turned-in files (5 points)
+  \end{enumerate}
+\end{enumerate}
+
+An additional 2 points may be taken off if output files are turned in with Windows carriage returns.
+
+\subsection{Homework-specific Portion (75 points)} \label{sec:specificrubric}
+
+This section cannot be schematized, but is based on the needs of each assignment. However, there are some best practices. Although the gross distribution of points is defined by the professor in the homework description, the TA still has to make decisions about the finer distribution.
+
+\begin{enumerate}
+\item {Some points should be assigned for correct formatting for each output file.}
+ 
+\item {Points distributed for the program being implemented correctly should depend on evaluating the program output on test files that are as modular as possible.
+
+For instance, the grader should create an input that will test for the code's ability to handle multiple labeling paths, and assign points for ``Chooses the correct labeling path" based on that test. Then a separate test may look for the code handling unknown words. These tests should not be intermixed (or there should be a separate test input that mixes them). }
+ 
+\end{enumerate}
+
+
+\section{submit-file-list} \label{sec:files}
+
+Most of the grading files are created by the TA, however the submit-file-list should be created by the instructor. This file lists all the expected files in the student's submitted tar. The format is a set of newline-separated list of expected files, in relative path format. For instance, the file might look like the following:
+
+\vspace{5pt}
+
+\texttt{run.sh}
+
+\texttt{table}
+
+\texttt{Q2/q2.sh}
+
+\texttt{Q2/decoder.sh}
+
+\texttt{Q3/q3.sh}
+
+\texttt{Q3/results/data.txt}
+
+
+\end{document}
