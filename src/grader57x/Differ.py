@@ -1,4 +1,4 @@
-import os
+import os, re
 
 class Differ:
   ACTUAL = ''
@@ -40,9 +40,12 @@ class Differ:
     actual_file = self.ACTUAL
     if self.SORT_FILE:
       actual_file = self.ACTUAL + '.sorted'
+      gold_file = self.GOLD + '.sorted'
       #don't call unix sort multiple times on rerun
       if not os.path.isfile(actual_file):
         os.system('sort ' + self.ACTUAL + ' > ' + actual_file)
+      if not os.path.isfile(gold_file):
+        os.system('sort ' + self.GOLD + ' > ' + gold_file)
       #if it's still not there something went wrong, probably permissions
       if not os.path.isfile(actual_file): #there was an error in creating the sorted file
         return('ERROR: Was unable to sort the file ' + self.ACTUAL)
@@ -52,7 +55,7 @@ class Differ:
     gold_counter = 1
     actual_counter = 1
     different_lines = 0
-    with open(self.GOLD, 'r') as g, open(self.ACTUAL, 'r') as a, open(self.OUTPUT, 'w') as w:
+    with open(gold_file, 'r') as g, open(actual_file, 'r') as a, open(self.OUTPUT, 'w') as w:
       #pre-populate buffer
       for i in range(self.LOOKAHEAD_VALUE):
         gold_buffer.append(g.readline())
@@ -78,9 +81,9 @@ class Differ:
           #first check by advancing the gold
           gold_matches = False
           actual_matches = False
-          for i in range(1,len(gold_buffer)):
+          for i in range(0,len(gold_buffer)):
             #check compare_memory first
-            compare = compare_memory.get(str(gold_counter)+'-'+str(actual_counter))
+            compare = compare_memory.get(str(gold_counter + i)+'-'+str(actual_counter))
             if compare == None:
               compare = self.compare_line(gold_buffer[i], actual_buffer[0], gold_counter + i, actual_counter)
               compare_memory[str(gold_counter)+'-'+str(actual_counter)] = compare
@@ -99,11 +102,11 @@ class Differ:
             continue # TODO remove this line after testing
           #now check by advancing the actual
           else: #don't do this if gold_matches worked
-            for i in range(1, len(actual_buffer)):
+            for i in range(0, len(actual_buffer)):
               #check compare_memory first
-              compare = compare_memory.get(str(gold_counter)+'-'+str(actual_counter))
+              compare = compare_memory.get(str(gold_counter)+'-'+str(actual_counter + i))
               if compare == None:
-                compare = compare_line(gold_buffer[0], actual_buffer[i], gold_counter, actual_counter + i)
+                compare = self.compare_line(gold_buffer[0], actual_buffer[i], gold_counter, actual_counter + i)
                 compare_memory[str(gold_counter)+'-'+str(actual_counter)] = compare
               if not compare:
                 actual_matches = i
@@ -149,12 +152,22 @@ class Differ:
       return False
 
   def compare_line_ignore_spacing(self, gold_line, actual_line, gold_line_number, actual_line_number):
-    gold_compare = gold_line.split()
-    actual_compare = actual_line.split()
+    #gold_compare = gold_line.split()
+    gold_compare = [a for a in re.split(r'(\s|=)', gold_line) if a]
+    #actual_compare = actual_line.split()
+    actual_compare = [a for a in re.split(r'(\s|=)', actual_line) if a]
     while ('' in gold_compare):
       gold_compare.remove('')
+    while (' ' in gold_compare):
+      gold_compare.remove(' ')
+    while ('\t' in gold_compare):
+      gold_compare.remove('\t')
     while('' in actual_compare):
       actual_compare.remove('')
+    while(' ' in actual_compare):
+      actual_compare.remove(' ')
+    while ('\t' in actual_compare):
+      actual_compare.remove('\t')
     diff = False
     expected = ""
     actual = ""

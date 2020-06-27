@@ -59,11 +59,11 @@ def open_student(student_name, student_tar, config): #foldername, file_structure
     print('It looks like the folder ' + config['destination'] + ' doesn\'t exist. Aborting.')
     return
   grade_report = GR.from_file(config['report'])
-  # move tar file to student directory and untar
   # if the student directory exists, delete it
   if os.path.exists(config['destination'] + '/' + student_name):
     shutil.rmtree(config['destination'] + '/' + student_name)
   os.mkdir(config['destination'] + '/' + student_name)
+  # move tar file to student directory and untar
   shutil.copyfile(student_tar, config['destination'] + '/' + student_name + '/' + student_tar)
   os.chdir(config['destination'] + '/' + student_name)
   # if student grade exists, remove it
@@ -123,7 +123,7 @@ def untar(student, grade_report):
   # check for tar
   tarname = None
   for file in os.listdir('.'):
-    if '.tar' in file:
+    if '.tar' in file or '.gz' in file:
       tarname = file
       break
   if tarname == None:  # no tar file
